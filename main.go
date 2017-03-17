@@ -3,8 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"strings"
 
 	"github.com/igorbednar/httpbend/sender"
@@ -13,8 +11,7 @@ import (
 func main() {
 
 	url := flag.String("u", "", "server url")
-	filepath := flag.String("f", "", "file with request content")
-	reqnum := flag.Int("n", 1000, "total number of requests")
+	duration := flag.Int("d", 1000, "duration in seconds")
 	rate := flag.Int("r", 10, "number of requests per second")
 
 	flag.Parse()
@@ -24,24 +21,14 @@ func main() {
 		return
 	}
 
-	if len(strings.TrimSpace(*filepath)) == 0 {
-		flag.PrintDefaults()
-		return
-	}
-
-	file, err := ioutil.ReadFile(*filepath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v", err)
-		return
-	}
-
-	sender := &sender.HTTPSender{
-		URL:           "http://localhost:8000",
-		Request:       string(file),
-		ContentType:   "text/xml",
+	sender := sender.HTTPSender{
+		URL:           *url,
 		RatePerSecond: *rate,
-		NumOfRequests: *reqnum,
+		Duration:      *duration,
 	}
 
-	sender.Start()
+	result := sender.Start()
+	fmt.Printf("Total number of requests sent: %d \n", result.TotalReqSent)
+	fmt.Printf("Total number of errors : %d \n", result.NumOfErrors)
+	fmt.Printf("Average response time is: %f sec \n", result.AvgReqTime)
 }
